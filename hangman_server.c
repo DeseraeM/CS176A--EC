@@ -53,6 +53,20 @@ void sendM(int fd, const char *msg){
         exit(1);
     }
 }
+void sendG(int fd, char *word, char *guessed, int num_incorrect) {
+    unsigned char word_length = strlen(word);
+    char buf[256];
+    buf[0] = 0x00;
+    buf[1] = word_length;
+    buf[2] = num_incorrect;
+    memcpy(buf + 3, word, word_length);
+    memcpy(buf + 3 + word_length, guessed, num_incorrect);
+    if (send(fd, buf, 3 + word_length + num_incorrect, 0) < 0) {
+        perror("send");
+        close(fd);
+        exit(1);
+    }
+}
 
 /* TODO: Send a game control packet to fd. */
 void PlayG(int fd){
