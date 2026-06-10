@@ -52,18 +52,24 @@ int main(int argc, char *argv[]) {
     setvbuf(stdout, NULL, _IONBF, 0);
 
     /* TODO: Create socket and connect to server (see socket_client_example.c). */
-   strncpy(servIP, argv[1], sizeof(servIP));
-   servPort = atoi(argv[2]);
-      if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP))< 0){
-         perror("socket");
-         exit(1);
+      strncpy(servIP, argv[1], sizeof(servIP));
+      servPort = atoi(argv[2]);
+      if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
+        perror("socket");
+        exit(1);
       }
+
+
+      int reuse = 1;
+      setsockopt(clientSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
       memset(&servAddr, 0, sizeof(servAddr));
       servAddr.sin_family = AF_INET;
       servAddr.sin_port = htons(servPort);
       inet_pton(AF_INET, servIP, &servAddr.sin_addr);
 
-      if (connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) <0){
+      sleep(1);
+
+      if(connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) <0){
          printf("connect() failed\n");
          exit(1);
       }
