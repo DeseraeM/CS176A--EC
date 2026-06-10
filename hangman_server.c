@@ -141,9 +141,17 @@ int main(int argc, char *argv[]) {
     lWords();
 
     int serverSock;
-    if ((serverSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) { perror("socket"); exit(1); }
+    serverSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (serverSock < 0) {
+        perror("socket");
+        exit(1);
+    }
     int opt = 1;
-    if (setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) { perror("setsockopt"); exit(1); }
+    int sockoptRet = setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    if (sockoptRet < 0) {
+        perror("setsockopt");
+        exit(1);
+    }
 
     struct sockaddr_in servAddr;
     memset(&servAddr, 0, sizeof(servAddr));
@@ -151,20 +159,45 @@ int main(int argc, char *argv[]) {
     servAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servAddr.sin_port = htons(atoi(argv[1]));
 
-    if (bind(serverSock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) { perror("bind"); exit(1); }
-    if (listen(serverSock, 20) < 0) { perror("listen"); exit(1); }
-
+    int bindRet = bind(serverSock, (struct sockaddr *)&servAddr, sizeof(servAddr));
+    if (bindRet < 0) {
+        perror("bind");
+        exit(1);
+    }
+    int listenRet = listen(serverSock, 20);
+    if (listenRet < 0) {
+        perror("listen");
+        exit(1);
+        }
     printf("Listening on port %s\n", argv[1]);
     fflush(stdout);
 
     while (1) {
         struct sockaddr_in clntAddr;
         socklen_t clntLen = sizeof(clntAddr);
+
+    
         int *fd = malloc(sizeof(int));
+        if (fd == NULL) {
+            perror("malloc");
+            continue;
+        }
+
+    
         *fd = accept(serverSock, (struct sockaddr *)&clntAddr, &clntLen);
-        if (*fd < 0) { perror("accept"); free(fd); continue; }
+        if (*fd < 0) {
+            perror("accept");
+            free(fd);
+            continue;
+            }
         pthread_t tid;
-        if (pthread_create(&tid, NULL, gameT, fd) != 0) { perror("pthread_create"); close(*fd); free(fd); continue; }
+        int ret = pthread_create(&tid, NULL, gameT, fd);
+        if (ret != 0) {
+            perror("pthread_create");
+            close(*fd);
+            free(fd);
+            continue;
+            }
         pthread_detach(tid);
     }
     return 0;
