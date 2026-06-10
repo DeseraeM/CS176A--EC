@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
         exit(1);
         
     }
-    if (listen(serverSock, MAX_CLIENTS) < 0){
+    if (listen(serverSock, 20) < 0){
         perror("listen");
         exit(1);
     }

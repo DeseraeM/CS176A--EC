@@ -66,12 +66,20 @@ int main(int argc, char *argv[]) {
       servAddr.sin_family = AF_INET;
       servAddr.sin_port = htons(servPort);
       inet_pton(AF_INET, servIP, &servAddr.sin_addr);
-
-      sleep(1);
-
-      if(connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) <0){
-         printf("connect() failed\n");
-         exit(1);
+      int connected = 0;
+      for (int attempt = 0; attempt < 5; attempt++) {
+          if (connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) == 0) {
+              connected = 1;
+              break;
+          }
+          if (attempt < 4) {
+              sleep(1);  // Wait before retry
+          }
+      }
+      
+      if (!connected) {
+          printf("connect() failed\n");
+          exit(1);
       }
 
     /* TODO: Prompt >>>Ready to start game? (y/n):
