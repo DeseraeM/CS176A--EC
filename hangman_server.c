@@ -115,16 +115,16 @@ void PlayG(int fd){
         
         if (strcmp(wordS, word) == 0){
             sendG(fd, wordS, guessed, numI);
-            sendM(fd, ">>>You Win!");
-            sendM(fd, ">>>Game Over!");
+            sendM(fd, "You Win!");
+            sendM(fd, "Game Over!");
             gameO = 1;
         }
         else if (numI >= MAX_INCORRECT){
-            sendG(fd, wordS, guessed, numI);
-            sendM(fd, ">>>The word was ");
-            sendM(fd, word);
-            sendM(fd, ">>>You Lose!");
-            sendM(fd, ">>>Game Over!");
+            char losing_msg[64];
+            snprintf(losing_msg, sizeof(losing_msg), "The word was %s", word);
+            sendM(fd, losing_msg);
+            sendM(fd, "You Lose!");
+            sendM(fd, "Game Over!");
             gameO = 1;
         }
     }

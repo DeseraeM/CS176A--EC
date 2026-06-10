@@ -139,17 +139,15 @@ int main(int argc, char *argv[]) {
             if (i < word_length - 1) printf(" ");
             }
             printf("\n");
-         if (num_incorrect > 0){
-            printf(">>>Incorrect Guesses: ");
-            for (int i = 0; i < num_incorrect; i++){
-               if(i < num_incorrect - 1){
-                  printf("%c ", rcvBuf[word_length + i]);
-                  } else {
-                     printf("%c", rcvBuf[word_length + i]);
-                  }
+         printf(">>>Incorrect Guesses: ");
+         for (int i = 0; i < num_incorrect; i++){
+            if(i < num_incorrect - 1){
+               printf("%c ", rcvBuf[word_length + i]);
+               } else {
+                  printf("%c", rcvBuf[word_length + i]);
                }
-               printf("\n");
             }
+             printf("\n");
          if (getGuess(sndBuf) == 0) break;
          if(send(clientSock, sndBuf, 1, 0) <0 ){
             perror("send");
