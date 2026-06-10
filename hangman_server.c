@@ -55,21 +55,6 @@ void sendM(int fd, const char *msg){
 }
 
 /* TODO: Send a game control packet to fd. */
-void sendG(int fd, char *word, char *guessed, int num_incorrect) {
-    unsigned char word_length = strlen(word);
-    char buf[256];
-    buf[0] = 0x00;
-    buf[1] = word_length;
-    buf[2] = num_incorrect;
-    memcpy(buf + 3, word, word_length);
-    memcpy(buf + 3 + word_length, guessed, num_incorrect);
-    if (send(fd, buf, 3 + word_length + num_incorrect, 0) < 0) {
-        perror("send");
-        close(fd);
-        exit(1);
-    }
-}
-/* TODO: Play one game with a connected client on fd. */
 void PlayG(int fd){
     char *word = words[rand() % numsWords];
     int wordL = strlen(word);
@@ -83,9 +68,10 @@ void PlayG(int fd){
     int gameO = 0;
 
     sendM(fd, ">>>Game Starting!");
-    sendG(fd, wordS,guessed, numI);
+    
     while(!gameO){
-        sendG(fd, wordS, guessed, numI);
+        sendG(fd, wordS, guessed, numI); 
+        
         char rcvBuf[1];
         if (recvall(fd, rcvBuf, 1) < 0) {
             perror("recv");
@@ -95,24 +81,26 @@ void PlayG(int fd){
         char guess = tolower(rcvBuf[0]);
 
         int c = 0;
-        for (int i =0; i < wordL; i ++){
-            if (word[i]==guess){
+        for (int i = 0; i < wordL; i++){
+            if (word[i] == guess){
                 wordS[i] = guess;
-                c =1;
+                c = 1;
             }
         }
+        
         if (!c){
             int duplicate = 0;
-            for(int i =0; i < numI; i++){
+            for(int i = 0; i < numI; i++){
                 if(guessed[i] == guess){
-                    duplicate =1;
+                    duplicate = 1;
                     break;
                 }
             }
             if(!duplicate){
-            guessed[numI++] = guess;
+                guessed[numI++] = guess;
             }
         }
+        
         if (strcmp(wordS, word) == 0){
             sendG(fd, wordS, guessed, numI);
             sendM(fd, ">>>You Win!");
