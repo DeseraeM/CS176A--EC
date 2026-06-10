@@ -80,8 +80,6 @@ void PlayG(int fd){
     char guessed[MAX_INCORRECT];
     int numI = 0;
     int gameO = 0;
-
-    sendM(fd, ">>>Game Starting!");
     
     while(!gameO){
         sendG(fd, wordS, guessed, numI); 

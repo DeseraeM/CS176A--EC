@@ -22,21 +22,31 @@ int recvall(int fd, void *buf, int n) {
 /* TODO: Prompt the user for a single letter guess.
    Print >>>Error! Please guess one letter. and re-prompt on bad input.
    Return 0 on EOF, 1 on success. */
-int getGuess(char *buf){
-   char guess;
-   int guessV;
-   printf("\n>>>Letter to guess: ");
-   guess = tolower(getchar());
-   getchar();
-
-   while(guess < 'a' || guess > 'z'){
-         printf(">>>Error! Please guess one letter.\n");
-         printf(">>>Letter to guess: ");
-         guess = tolower(getchar());
-         getchar();
-      }
-   buf[0] = guess;
-   return 1;
+int getGuess(char *buf) {
+    char guess;
+    printf("\n>>>Letter to guess: ");
+    
+    int ch = getchar();
+    if (ch == EOF) {
+        return 0;  
+    }
+    guess = tolower(ch);
+    while (getchar() != '\n');
+   
+    while (guess < 'a' || guess > 'z') {
+        printf(">>>Error! Please guess one letter.\n");
+        printf(">>>Letter to guess: ");
+        
+        ch = getchar();
+        if (ch == EOF) {
+            return 0;
+        }
+        guess = tolower(ch);
+        while (getchar() != '\n');
+    }
+    
+    buf[0] = guess;
+    return 1;
 }
 
 int clientSock;
@@ -54,34 +64,18 @@ int main(int argc, char *argv[]) {
     /* TODO: Create socket and connect to server (see socket_client_example.c). */
       strncpy(servIP, argv[1], sizeof(servIP));
       servPort = atoi(argv[2]);
-      if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0){
-        perror("socket");
-        exit(1);
-      }
-
-
-      int reuse = 1;
-      setsockopt(clientSock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-      memset(&servAddr, 0, sizeof(servAddr));
-      servAddr.sin_family = AF_INET;
-      servAddr.sin_port = htons(servPort);
-      inet_pton(AF_INET, servIP, &servAddr.sin_addr);
-      sleep(1);
-      int connected = 0;
-      for (int attempt = 0; attempt < 5; attempt++) {
-          if (connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) == 0) {
-              connected = 1;
-              break;
-          }
-          if (attempt < 4) {
-              sleep(1);  // Wait before retry
-          }
-      }
-      
-      if (!connected) {
-          printf("connect() failed\n");
-          exit(1);
-      }
+      if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+         perror("socket");
+         exit(1);
+         }
+         memset(&servAddr, 0, sizeof(servAddr));
+         servAddr.sin_family = AF_INET;
+         servAddr.sin_port = htons(servPort);
+         inet_pton(AF_INET, servIP, &servAddr.sin_addr);
+         if (connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
+            perror("connect() failed");
+            exit(1);
+         }
 
     /* TODO: Prompt >>>Ready to start game? (y/n):
        If 'n', close and exit.
@@ -139,14 +133,17 @@ int main(int argc, char *argv[]) {
             close(clientSock);
             exit(1);
          }
-         for (int i =0; i < word_length; i++)
-            printf("%c ", rcvBuf[i]);
+         printf(">>>");
+         for (int i = 0; i < word_length; i++) {
+            printf("%c", rcvBuf[i]);
+            if (i < word_length - 1) printf(" ");
+            }
             printf("\n");
          if (num_incorrect > 0){
             printf(">>>Incorrect Guesses: ");
             for (int i = 0; i < num_incorrect; i++){
                if(i < num_incorrect - 1){
-                  printf("%c, ", rcvBuf[word_length + i]);
+                  printf("%c ", rcvBuf[word_length + i]);
                   } else {
                      printf("%c", rcvBuf[word_length + i]);
                   }
