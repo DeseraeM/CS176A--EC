@@ -1,0 +1,10 @@
+cat
+dog
+low
+fish
+bird
+frog
+house
+cloud
+planet
+surround
