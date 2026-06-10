@@ -102,7 +102,16 @@ void PlayG(int fd){
             }
         }
         if (!c){
+            int duplicate = 0;
+            for(int i =0; i < numI; i++){
+                if(guessed[i] == guess){
+                    duplicate =1;
+                    break;
+                }
+            }
+            if(!duplicate){
             guessed[numI++] = guess;
+            }
         }
         if (strcmp(wordS, word) == 0){
             sendG(fd, wordS, guessed, numI);
@@ -110,8 +119,11 @@ void PlayG(int fd){
             sendM(fd, ">>>Game Over!");
             gameO = 1;
         }
-        if (numI >= MAX_INCORRECT){
+        else if (numI >= MAX_INCORRECT){
             sendG(fd, wordS, guessed, numI);
+            sendM(fd, ">>>The word was ");
+            sendM(fd, word);
+            sendM(fd, ">>>You Lose!");
             sendM(fd, ">>>Game Over!");
             gameO = 1;
         }
