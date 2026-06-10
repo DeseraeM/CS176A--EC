@@ -19,7 +19,7 @@ int recvall(int fd, void *buf, int n) {
 }
 
 int getGuess(char *buf) {
-    printf("\n>>>Letter to guess: ");
+    printf(">>>Letter to guess: ");
     fflush(stdout);
 
     int ch = getchar();
@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
                 if (i < num_incorrect - 1) printf(" ");
             }
             printf("\n");
+            printf(">>>\n");
 
             if (getGuess(sndBuf) == 0) break;
             if (send(clientSock, sndBuf, 1, 0) < 0) { perror("send"); break; }
