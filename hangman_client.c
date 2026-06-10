@@ -26,11 +26,9 @@ int getGuess(char *buf) {
     if (ch == EOF) { printf("\n"); return 0; }
 
     int next = getchar();
-    // flush rest of line if more chars
     if (next != '\n' && next != EOF) {
         int c;
         while ((c = getchar()) != '\n' && c != EOF);
-        // force invalid
         ch = 0;
     }
 
