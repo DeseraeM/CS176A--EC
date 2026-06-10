@@ -7,7 +7,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-/* TODO: Implement recvall (see socket_client_example.c). */
 int recvall(int fd, void *buf, int n) {
     char *p = (char *)buf;
     int got = 0;
@@ -19,143 +18,106 @@ int recvall(int fd, void *buf, int n) {
     return got;
 }
 
-/* TODO: Prompt the user for a single letter guess.
-   Print >>>Error! Please guess one letter. and re-prompt on bad input.
-   Return 0 on EOF, 1 on success. */
 int getGuess(char *buf) {
-    char guess;
     printf("\n>>>Letter to guess: ");
-    
+    fflush(stdout);
+
     int ch = getchar();
-    if (ch == EOF) {
-        return 0;  
+    if (ch == EOF) { printf("\n"); return 0; }
+
+    int next = getchar();
+    // flush rest of line if more chars
+    if (next != '\n' && next != EOF) {
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+        // force invalid
+        ch = 0;
     }
-    guess = tolower(ch);
-    while (getchar() != '\n');
-   
-    while (guess < 'a' || guess > 'z') {
+
+    while (!(( ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))) {
         printf(">>>Error! Please guess one letter.\n");
         printf(">>>Letter to guess: ");
-        
+        fflush(stdout);
         ch = getchar();
-        if (ch == EOF) {
-            return 0;
+        if (ch == EOF) { printf("\n"); return 0; }
+        next = getchar();
+        if (next != '\n' && next != EOF) {
+            int c;
+            while ((c = getchar()) != '\n' && c != EOF);
+            ch = 0;
         }
-        guess = tolower(ch);
-        while (getchar() != '\n');
     }
-    
-    buf[0] = guess;
+
+    buf[0] = tolower(ch);
     return 1;
 }
-
-int clientSock;
-struct sockaddr_in servAddr;
-char sndBuf[1];
-char rcvBuf[256];
-char servIP[16];
-int servPort;
 
 int main(int argc, char *argv[]) {
     if (argc < 3) { fprintf(stderr, "usage: hangman_client <ip> <port>\n"); return 1; }
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    /* TODO: Create socket and connect to server (see socket_client_example.c). */
-      strncpy(servIP, argv[1], sizeof(servIP));
-      servPort = atoi(argv[2]);
-      if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-         perror("socket");
-         exit(1);
-         }
-         memset(&servAddr, 0, sizeof(servAddr));
-         servAddr.sin_family = AF_INET;
-         servAddr.sin_port = htons(servPort);
-         inet_pton(AF_INET, servIP, &servAddr.sin_addr);
-         if (connect(clientSock, (struct sockaddr*)&servAddr, sizeof(servAddr)) < 0) {
-            perror("connect() failed");
-            exit(1);
-         }
+    int clientSock;
+    struct sockaddr_in servAddr;
+    if ((clientSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) { perror("socket"); exit(1); }
+    memset(&servAddr, 0, sizeof(servAddr));
+    servAddr.sin_family = AF_INET;
+    servAddr.sin_port = htons(atoi(argv[2]));
+    inet_pton(AF_INET, argv[1], &servAddr.sin_addr);
+    if (connect(clientSock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+        perror("connect() failed");
+        exit(1);
+    }
 
-    /* TODO: Prompt >>>Ready to start game? (y/n):
-       If 'n', close and exit.
-       If 'y', send the start packet (1 byte, value 0). */
-       char ans;
-       do{
-         printf(">>>Ready to start game? (y/n): ");
-         ans = getchar();
-         ans = tolower(ans);
-         getchar();
-       }while (ans != 'y' && ans != 'n');
-       printf("\n");
-       if (ans == 'n'){
-         close(clientSock);
-         exit(0);
-       }
-       sndBuf[0] = 0x00;
-       if (send(clientSock, sndBuf, 1, 0) < 0){
-         perror("send");
-         close(clientSock);
-         exit(1);
-       }
+    char ans;
+    do {
+        printf(">>>Ready to start game? (y/n): ");
+        fflush(stdout);
+        ans = tolower(getchar());
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF);
+    } while (ans != 'y' && ans != 'n');
 
-    /* TODO: Loop receiving packets from the server.
-       - msg_flag > 0: read msg_flag bytes, print as >>>...\n, break on "Game Over!".
-       - msg_flag == 0: read word_length and num_incorrect, then the word state and
-         incorrect letters, print the game state, prompt for a guess, send it. */
-      while(1){
-         if (recvall(clientSock, rcvBuf, 1) < 0) {
-            perror("recv");
-            close(clientSock);
-            exit(1);
-         }
-         unsigned char msg_flag = rcvBuf[0];
-         if (msg_flag >0 ){
-            if (recvall(clientSock, rcvBuf, msg_flag) < 0) {
-               perror("recv");
-               close(clientSock);
-               exit(1);
-         }
-         rcvBuf[msg_flag] = '\0';
-         printf(">>>%s\n", rcvBuf);
-         if (strcmp(rcvBuf, "Game Over!") == 0) break;
-         }else{
-            if (recvall(clientSock, rcvBuf, 2) < 0) {
-               perror("recv");
-               close(clientSock);
-               exit(1);
-         }
-         unsigned char word_length = rcvBuf[0];
-         unsigned char num_incorrect = rcvBuf[1];
-         int total = word_length + num_incorrect;
-         if(recvall(clientSock, rcvBuf, total) <0 ){
-            perror("recv");
-            close(clientSock);
-            exit(1);
-         }
-         printf(">>>");
-         for (int i = 0; i < word_length; i++) {
-            printf("%c", rcvBuf[i]);
-            if (i < word_length - 1) printf(" ");
+    if (ans == 'n') { close(clientSock); return 0; }
+
+    char sndBuf[1] = {0x00};
+    if (send(clientSock, sndBuf, 1, 0) < 0) { perror("send"); close(clientSock); exit(1); }
+
+    char rcvBuf[256];
+    while (1) {
+        if (recvall(clientSock, rcvBuf, 1) < 0) break;
+        unsigned char msg_flag = (unsigned char)rcvBuf[0];
+
+        if (msg_flag > 0) {
+            if (recvall(clientSock, rcvBuf, msg_flag) < 0) break;
+            rcvBuf[msg_flag] = '\0';
+            printf(">>>%s\n", rcvBuf);
+            if (strcmp(rcvBuf, "Game Over!") == 0) break;
+        } else {
+            if (recvall(clientSock, rcvBuf, 2) < 0) break;
+            unsigned char word_length = (unsigned char)rcvBuf[0];
+            unsigned char num_incorrect = (unsigned char)rcvBuf[1];
+            if (recvall(clientSock, rcvBuf, word_length + num_incorrect) < 0) break;
+
+            printf(">>>");
+            for (int i = 0; i < word_length; i++) {
+                printf("%c", rcvBuf[i]);
+                if (i < word_length - 1) printf(" ");
             }
             printf("\n");
-         printf(">>>Incorrect Guesses: ");
-         for (int i = 0; i < num_incorrect; i++){
-            if(i < num_incorrect - 1){
-               printf("%c ", rcvBuf[word_length + i]);
-               } else {
-                  printf("%c", rcvBuf[word_length + i]);
-               }
+
+            printf(">>>Incorrect Guesses: ");
+            for (int i = 0; i < num_incorrect; i++) {
+                printf("%c", rcvBuf[word_length + i]);
+                if (i < num_incorrect - 1) printf(" ");
             }
-             printf("\n");
-         if (getGuess(sndBuf) == 0) break;
-         if(send(clientSock, sndBuf, 1, 0) <0 ){
-            perror("send");
-            close(clientSock);
-            exit(1);
-         }
+            printf("\n");
+
+            if (getGuess(sndBuf) == 0) break;
+            if (send(clientSock, sndBuf, 1, 0) < 0) { perror("send"); break; }
         }
-      }
-   close(clientSock);
-   return 0;
+    }
+
+    close(clientSock);
+    return 0;
 }
