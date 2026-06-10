@@ -25,21 +25,16 @@ int recvall(int fd, void *buf, int n) {
 int getGuess(char *buf){
    char guess;
    int guessV;
-   printf("\nLetter to guess: ");
+   printf("\n>>>Letter to guess: ");
    guess = tolower(getchar());
    getchar();
-   guessV = 0;
-   while(!guessV){
-      if (guess < 'a' || guess > 'z'){
-         printf(">>>Error Please guess one letter \nLetter to guess:");
+
+   while(guess < 'a' || guess > 'z'){
+         printf(">>>Error! Please guess one letter.\n");
+         printf(">>>Letter to guess: ");
          guess = tolower(getchar());
          getchar();
       }
-      if (guess >= 'a' && guess <= 'z'){
-         guessV = 1;
-      }
-   }
-   printf("\n");
    buf[0] = guess;
    return 1;
 }
@@ -78,7 +73,7 @@ int main(int argc, char *argv[]) {
        If 'y', send the start packet (1 byte, value 0). */
        char ans;
        do{
-         printf("Ready to start game? (Y/N): ");
+         printf(">>>Ready to start game? (y/n): ");
          ans = getchar();
          ans = tolower(ans);
          getchar();
@@ -132,16 +127,17 @@ int main(int argc, char *argv[]) {
          for (int i =0; i < word_length; i++)
             printf("%c ", rcvBuf[i]);
             printf("\n");
-         if (num_incorrect >0){
-            printf("Incorrect guesses: ");
-         for (int i = 0; i < num_incorrect; i++){
-            if(i < num_incorrect -1)
-               printf("%c, ", rcvBuf[word_length + i]);
-                else
-                    printf("%c", rcvBuf[word_length + i]);
+         if (num_incorrect > 0){
+            printf(">>>Incorrect Guesses: ");
+            for (int i = 0; i < num_incorrect; i++){
+               if(i < num_incorrect - 1){
+                  printf("%c, ", rcvBuf[word_length + i]);
+                  } else {
+                     printf("%c", rcvBuf[word_length + i]);
+                  }
+               }
+               printf("\n");
             }
-            printf("\n");
-         }
          if (getGuess(sndBuf) == 0) break;
          if(send(clientSock, sndBuf, 1, 0) <0 ){
             perror("send");
@@ -150,6 +146,6 @@ int main(int argc, char *argv[]) {
          }
         }
       }
-      close(clientSock);
-      return 0;
-      }
+   close(clientSock);
+   return 0;
+}
