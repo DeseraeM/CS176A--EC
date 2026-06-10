@@ -13,7 +13,7 @@
 #define MAX_WORD_LEN  9
 #define MAX_INCORRECT 6
 
-/* TODO: Load words from hangman_words.txt into a global array. */
+/* TODO: Load words from hangman_words.txt intgito a global array. */
 char words[MAX_WORDS][MAX_WORD_LEN];
 int numsWords =0;
 
@@ -82,7 +82,8 @@ void PlayG(int fd){
     int numI = 0;
     int gameO = 0;
 
-    sendM(fd, "Game Starting!");
+    sendM(fd, ">>>Game Starting!");
+    sendG(fd, wordS,guessed, numI);
     while(!gameO){
         sendG(fd, wordS, guessed, numI);
         char rcvBuf[1];
@@ -105,12 +106,13 @@ void PlayG(int fd){
         }
         if (strcmp(wordS, word) == 0){
             sendG(fd, wordS, guessed, numI);
-            sendM(fd, "You Win!");
+            sendM(fd, ">>>You Win!");
+            sendM(fd, ">>>Game Over!");
             gameO = 1;
         }
         if (numI >= MAX_INCORRECT){
             sendG(fd, wordS, guessed, numI);
-            sendM(fd, "Game Over!");
+            sendM(fd, ">>>Game Over!");
             gameO = 1;
         }
     }
@@ -127,9 +129,11 @@ void *gameT(void *arg) {
         close(fd);
         return NULL;
     }
-
+    if (rcvBuf[0] != 0x00) {
+        close(fd);
+        return NULL;
+    }
     PlayG(fd);
-
     close(fd);
     return NULL;
 }
